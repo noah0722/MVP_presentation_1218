@@ -1,3 +1,5 @@
+// lib/features/post/presentation/widgets/post_type_selector.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/post_create_provider.dart';
@@ -11,67 +13,41 @@ class PostTypeSelector extends ConsumerWidget {
 
     return Container(
       height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _TypeOption(
-            type: PostType.text,
-            currentType: currentType,
-            icon: Icons.text_fields,
-          ),
-          _TypeOption(
-            type: PostType.image,
-            currentType: currentType,
-            icon: Icons.image,
-          ),
-          _TypeOption(
-            type: PostType.video,
-            currentType: currentType,
-            icon: Icons.videocam,
-          ),
-          _TypeOption(
-            type: PostType.link,
-            currentType: currentType,
-            icon: Icons.link,
-          ),
-          _TypeOption(
-            type: PostType.poll,
-            currentType: currentType,
-            icon: Icons.poll,
-          ),
-        ],
+        children: PostType.values.map((type) {
+          return _TypeOption(
+            type: type,
+            isSelected: type == currentType,
+            onTap: () => ref.read(postCreateProvider.notifier).setType(type),
+          );
+        }).toList(),
       ),
     );
   }
 }
 
-class _TypeOption extends ConsumerWidget {
+class _TypeOption extends StatelessWidget {
   final PostType type;
-  final PostType currentType;
-  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   const _TypeOption({
     required this.type,
-    required this.currentType,
-    required this.icon,
+    required this.isSelected,
+    required this.onTap,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isSelected = type == currentType;
-
+  Widget build(BuildContext context) {
     return Expanded(
       child: InkWell(
-        onTap: () {
-          ref.read(postCreateProvider.notifier).setType(type);
-        },
+        onTap: onTap,
         child: Container(
-          height: double.infinity,
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -83,7 +59,7 @@ class _TypeOption extends ConsumerWidget {
             ),
           ),
           child: Icon(
-            icon,
+            _getIcon(type),
             color: isSelected
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -91,5 +67,20 @@ class _TypeOption extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  IconData _getIcon(PostType type) {
+    switch (type) {
+      case PostType.text:
+        return Icons.text_fields;
+      case PostType.image:
+        return Icons.image;
+      case PostType.video:
+        return Icons.videocam;
+      case PostType.link:
+        return Icons.link;
+      case PostType.poll:
+        return Icons.poll;
+    }
   }
 }

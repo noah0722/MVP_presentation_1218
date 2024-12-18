@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/theme_config.dart';
-import '../../../mu/models/mu_model.dart';
 
 class HomeDrawer extends ConsumerStatefulWidget {
   const HomeDrawer({super.key});
@@ -24,101 +23,42 @@ class _HomeDrawerState extends ConsumerState<HomeDrawer> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  // Recent Mus
-                  _buildMuSection(
+                  _buildSection(
                     icon: Icons.history,
                     title: '최근 방문 뮤',
                     isExpanded: _isRecentExpanded,
-                    onExpandTap: () {
-                      setState(() {
-                        _isRecentExpanded = !_isRecentExpanded;
-                      });
-                    },
-                    isEmpty: true, // TODO: Replace with actual data check
-                    emptyMessage: '새로운 뮤를 찾아보세요',
-                    onEmptyTap: () {
-                      // TODO: Navigate to Mu main page
-                    },
-                    items: [], // TODO: Replace with actual recent mus
+                    onExpand: () => setState(() {
+                      _isRecentExpanded = !_isRecentExpanded;
+                    }),
+                    items: const [], // TODO: Add recent mus
                   ),
-
-                  // My Mus
-                  _buildMuSection(
-                    icon: Icons.favorite,
+                  _buildSection(
+                    icon: Icons.favorite_outline,
                     title: '나의 뮤',
                     isExpanded: _isMyMusExpanded,
-                    onExpandTap: () {
-                      setState(() {
-                        _isMyMusExpanded = !_isMyMusExpanded;
-                      });
-                    },
-                    isEmpty: true, // TODO: Replace with actual data check
-                    emptyMessage: '뮤에 가입해보세요',
-                    onEmptyTap: () {
-                      // TODO: Navigate to Mu main page
-                    },
-                    items: [], // TODO: Replace with actual joined mus
+                    onExpand: () => setState(() {
+                      _isMyMusExpanded = !_isMyMusExpanded;
+                    }),
+                    items: const [], // TODO: Add my mus
                   ),
-
-                  // All Mus
-                  _buildMuSection(
-                    icon: Icons.explore,
+                  _buildSection(
+                    icon: Icons.explore_outlined,
                     title: '모든 뮤',
-                    items: [], // TODO: Replace with random mus
-                    showMoreText: '더 보기',
-                    onMoreTap: () {
-                      // TODO: Navigate to Mu main page
-                    },
+                    items: const [], // TODO: Add all mus
                   ),
                 ],
               ),
             ),
-
             // Footer
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  InkWell(
-                    onTap: () {
-                      // TODO: Navigate to Terms page
-                    },
-                    child: Text(
-                      '이용약관>',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.6),
-                          ),
-                    ),
-                  ),
+                  _buildFooterLink('이용약관'),
                   const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () {
-                      // TODO: Navigate to Privacy Policy page
-                    },
-                    child: Text(
-                      '개인정보처리방침>',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.6),
-                          ),
-                    ),
-                  ),
+                  _buildFooterLink('개인정보처리방침'),
                   const SizedBox(height: 8),
-                  Text(
-                    'Copyright 2024. Commune All Rights Reserved.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.6),
-                        ),
-                  ),
+                  const Text('Copyright 2024. Commune All Rights Reserved.'),
                 ],
               ),
             ),
@@ -128,152 +68,46 @@ class _HomeDrawerState extends ConsumerState<HomeDrawer> {
     );
   }
 
-  Widget _buildMuSection({
+  Widget _buildSection({
     required IconData icon,
     required String title,
     bool isExpanded = false,
-    VoidCallback? onExpandTap,
-    bool isEmpty = false,
-    String? emptyMessage,
-    VoidCallback? onEmptyTap,
-    required List<Mu> items,
-    String? showMoreText,
-    VoidCallback? onMoreTap,
+    VoidCallback? onExpand,
+    required List<Widget> items,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section header
         ListTile(
-          leading: Icon(
-            icon,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          title: Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          trailing: onExpandTap != null
-              ? IconButton(
-                  icon: Icon(
-                    isExpanded ? Icons.expand_less : Icons.expand_more,
-                  ),
-                  onPressed: onExpandTap,
+          leading: Icon(icon, color: ThemeConfig.primaryColor),
+          title: Text(title),
+          trailing: onExpand != null
+              ? Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
                 )
               : null,
+          onTap: onExpand,
         ),
-
-        // Empty state
-        if (isEmpty && emptyMessage != null)
-          InkWell(
-            onTap: onEmptyTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              child: Text(
-                emptyMessage,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
-                    ),
-              ),
-            ),
+        if (isExpanded && items.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text('아직 뮤가 없습니다'),
           ),
-
-        // Mu items
-        if (!isEmpty) ...[
-          ...items.take(isExpanded ? items.length : 3).map((mu) => _MuListItem(
-                mu: mu,
-                onTap: () {
-                  // TODO: Navigate to mu detail
-                },
-                onJoinTap: () {
-                  // TODO: Implement join mu
-                },
-              )),
-          if (showMoreText != null && !isExpanded && items.length > 3)
-            InkWell(
-              onTap: onMoreTap,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  showMoreText,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-        ],
-
+        if (isExpanded) ...items,
         const Divider(),
       ],
     );
   }
-}
 
-class _MuListItem extends StatelessWidget {
-  final Mu mu;
-  final VoidCallback onTap;
-  final VoidCallback onJoinTap;
-
-  const _MuListItem({
-    required this.mu,
-    required this.onTap,
-    required this.onJoinTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ),
-        child: Row(
-          children: [
-            // Mu profile image
-            CircleAvatar(
-              radius: 16,
-              backgroundImage: NetworkImage(mu.profileImageUrl),
-            ),
-            const SizedBox(width: 12),
-            // Mu name
-            Expanded(
-              child: Text(
-                'mu/${mu.name}',
-                style: Theme.of(context).textTheme.bodyMedium,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            // Join button
-            ElevatedButton(
-              onPressed: onJoinTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: ThemeConfig.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                minimumSize: const Size(60, 24),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                '가입',
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
+  Widget _buildFooterLink(String text) {
+    return GestureDetector(
+      onTap: () {
+        // TODO: Navigate to respective page
+      },
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          fontSize: 12,
         ),
       ),
     );

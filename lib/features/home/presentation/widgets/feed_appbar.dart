@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/theme_config.dart';
 
-class FeedAppBar extends StatelessWidget implements PreferredSizeWidget {
+class FeedAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final VoidCallback onMenuPressed;
 
   const FeedAppBar({
@@ -13,7 +14,7 @@ class FeedAppBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AppBar(
       leading: IconButton(
         icon: const Icon(Icons.menu),
@@ -27,9 +28,10 @@ class FeedAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
+        // Search field
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
               decoration: InputDecoration(
                 hintText: '뮤 검색',
@@ -46,20 +48,18 @@ class FeedAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               onSubmitted: (value) {
-                if (value.isNotEmpty) {
-                  // TODO: Navigate to search results page
-                }
+                // TODO: Navigate to search results
               },
             ),
           ),
         ),
+        // Profile button
         IconButton(
           icon: const Icon(Icons.person_outline),
           onPressed: () {
-            // TODO: Open profile drawer
+            Scaffold.of(context).openEndDrawer();
           },
         ),
-        const SizedBox(width: 8),
       ],
     );
   }

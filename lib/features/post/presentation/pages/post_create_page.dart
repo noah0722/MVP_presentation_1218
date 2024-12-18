@@ -1,29 +1,36 @@
+// lib/features/post/presentation/pages/post_write_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../providers/post_create_provider.dart';
-import '../widgets/mu_selector.dart';
 import '../widgets/post_type_selector.dart';
 import '../widgets/post_content_field.dart';
+import '../widgets/mu_selector.dart';
+import '../../../../core/config/theme_config.dart';
 
-class PostCreatePage extends ConsumerWidget {
+class PostCreatePage extends ConsumerStatefulWidget {
   const PostCreatePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(postCreateProvider);
-    final notifier = ref.read(postCreateProvider.notifier);
+  ConsumerState<PostCreatePage> createState() => _PostCreatePageState();
+}
 
-    ref.listen<PostCreateState>(postCreateProvider, (previous, next) {
-      if (previous?.error != next.error && next.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            showCloseIcon: true,
-          ),
-        );
-      }
-    });
+class _PostCreatePageState extends ConsumerState<PostCreatePage> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _contentController = TextEditingController();
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(postCreateProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -32,15 +39,17 @@ class PostCreatePage extends ConsumerWidget {
           TextButton(
             onPressed: state.isValid && !state.isLoading
                 ? () async {
-                    final success = await notifier.createPost();
-                    if (success && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('포스트가 작성되었습니다'),
-                          showCloseIcon: true,
-                        ),
-                      );
-                      Navigator.pop(context);
+                    if (_formKey.currentState?.validate() ?? false) {
+                      final success = await ref
+                          .read(postCreateProvider.notifier)
+                          .createPost(
+                              _titleController.text, _contentController.text);
+                      if (success && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('포스트가 작성되었습니다')),
+                        );
+                        Navigator.pop(context);
+                      }
                     }
                   }
                 : null,
@@ -54,52 +63,66 @@ class PostCreatePage extends ConsumerWidget {
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Mu selector
-                const MuSelector(),
-                const SizedBox(height: 16),
-
-                // Title input
-                TextField(
-                  decoration: const InputDecoration(
-                    hintText: '제목',
-                  ),
-                  onChanged: notifier.setTitle,
-                  maxLines: 1,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 16),
-
-                // Post type selector
-                const PostTypeSelector(),
-                const SizedBox(height: 16),
-
-                // Content field based on type
-                PostContentField(
-                  type: state.type,
-                  content: state.content,
-                  images: state.images,
-                  video: state.video,
-                  linkUrl: state.linkUrl,
-                  pollOptions: state.pollOptions,
-                  onContentChanged: notifier.setContent,
-                  onImagesAdded: notifier.pickImages,
-                  onVideoAdded: notifier.pickVideo,
-                  onLinkChanged: notifier.setLinkUrl,
-                  onAddPollOption: notifier.addPollOption,
-                  onRemovePollOption: notifier.removePollOption,
-                  onUpdatePollOption: notifier.updatePollOption,
-                ),
-              ],
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            const MuSelector(),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                hintText: '제목',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return '제목을 입력해주세요';
+                }
+                return null;
+              },
             ),
-          ),
+            const SizedBox(height: 16),
+            const PostTypeSelector(),
+            const SizedBox(height: 16),
+            PostContentField(
+              type: state.type,
+              content: _contentController.text,
+              images: state.images,
+              video: state.video,
+              linkUrl: state.linkUrl,
+              pollOptions: state.pollOptions,
+              onContentChanged: (value) => _contentController.text = value,
+              onImagesAdded: () async {
+                final ImagePicker picker = ImagePicker();
+                final images = await picker.pickMultiImage();
+                ref.read(postCreateProvider.notifier).addImages(images);
+              },
+              onVideoAdded: () async {
+                final ImagePicker picker = ImagePicker();
+                final video =
+                    await picker.pickVideo(source: ImageSource.gallery);
+                if (video != null) {
+                  ref.read(postCreateProvider.notifier).setVideo(video);
+                }
+              },
+              onLinkChanged: (value) {
+                ref.read(postCreateProvider.notifier).setLinkUrl(value);
+              },
+              onAddPollOption: (value) {
+                ref.read(postCreateProvider.notifier).addPollOption(value);
+              },
+              onRemovePollOption: (index) {
+                ref.read(postCreateProvider.notifier).removePollOption(index);
+              },
+              onUpdatePollOption: (index, value) {
+                ref
+                    .read(postCreateProvider.notifier)
+                    .updatePollOption(index, value);
+              },
+            ),
+          ],
         ),
       ),
     );

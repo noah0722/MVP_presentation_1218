@@ -9,6 +9,10 @@ enum PostFilter { all, discussion, official }
 
 enum MuFilter { all, politicsParty, newsPolls, election }
 
+final feedTypeProvider = StateProvider<FeedType>((ref) => FeedType.best);
+final postFilterProvider = StateProvider<PostFilter>((ref) => PostFilter.all);
+final muFilterProvider = StateProvider<MuFilter>((ref) => MuFilter.all);
+
 class HomeState {
   final List<Post> posts;
   final FeedType feedType;
